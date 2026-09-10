@@ -1,12 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-
-interface AnalysisProgressProps {
-  statusText?: string;
-}
-
-export function AnalysisProgress({ statusText }: AnalysisProgressProps) {
+export function AnalysisProgress({ statusText }: { statusText?: string }) {
   const steps = [
     { label: 'Recording', icon: 'check', isCompleted: true },
     { label: 'Transcribing', icon: 'progress_activity', isActive: true },

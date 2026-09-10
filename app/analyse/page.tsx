@@ -7,6 +7,20 @@ import { AnalysisProgress } from '@/components/analysis/AnalysisProgress';
 import { AudioStatus } from '@/types/audio';
 import { analysisService } from '@/services/analysisService';
 
+const STORAGE_KEY = 'voicelens_history_logs';
+
+function saveAnalysisToHistory(result: unknown) {
+  if (typeof window === 'undefined') return;
+  try {
+    const existingRaw = localStorage.getItem(STORAGE_KEY);
+    const existing = existingRaw ? JSON.parse(existingRaw) : [];
+    const updated = [result, ...existing];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.error('Failed to save analysis to localStorage:', err);
+  }
+}
+
 function AnalysePageContent() {
   const router = useRouter();
   const [status, setStatus] = useState<AudioStatus>('idle');
@@ -22,6 +36,7 @@ function AnalysePageContent() {
 
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('latest_analysis_result', JSON.stringify(result));
+        saveAnalysisToHistory(result);
       }
 
       setStatus('completed');
