@@ -29,41 +29,42 @@ export async function POST(request: Request) {
       );
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const groqApiKey = process.env.GROQ_API_KEY;
+    const geminiApiKey = process.env.GEMINI_API_KEY;
 
-    if (!apiKey) {
-      console.error('OPENAI_API_KEY environment variable is not configured.');
+    if (!groqApiKey || !geminiApiKey) {
+      console.error('Missing required API keys: GROQ_API_KEY or GEMINI_API_KEY is not configured.');
       return NextResponse.json(
-        { message: 'Speech analysis service is not configured. OPENAI_API_KEY environment variable is missing.' },
+        { message: 'Speech analysis service is not configured. GROQ_API_KEY and GEMINI_API_KEY environment variables are required.' },
         { status: 500 }
       );
     }
 
-    // --- Step 1: Speech-to-Text Transcription via OpenAI Whisper API ---
-    const whisperFormData = new FormData();
+    // --- Step 1: Free-Tier Speech-to-Text Transcription via Groq Whisper API (whisper-large-v3) ---
+    const groqFormData = new FormData();
     const filename = audioFile.name && audioFile.name.includes('.') ? audioFile.name : 'speech.webm';
-    whisperFormData.append('file', audioFile, filename);
-    whisperFormData.append('model', 'whisper-1');
+    groqFormData.append('file', audioFile, filename);
+    groqFormData.append('model', 'whisper-large-v3');
 
-    const whisperResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    const groqResponse = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${groqApiKey}`,
       },
-      body: whisperFormData,
+      body: groqFormData,
     });
 
-    if (!whisperResponse.ok) {
-      const errorText = await whisperResponse.text();
-      console.error('Whisper API Error:', errorText);
+    if (!groqResponse.ok) {
+      const errorText = await groqResponse.text();
+      console.error('Groq Whisper API Error:', errorText);
       return NextResponse.json(
-        { message: 'Transcription service encountered an error processing your microphone recording.' },
+        { message: 'Transcription service (Groq Whisper) encountered an error processing your recording.' },
         { status: 502 }
       );
     }
 
-    const whisperData = await whisperResponse.json();
-    const transcriptionText = (whisperData.text || '').trim();
+    const groqData = await groqResponse.json();
+    const transcriptionText = (groqData.text || '').trim();
 
     if (!transcriptionText) {
       return NextResponse.json(
@@ -81,8 +82,8 @@ export async function POST(request: Request) {
     const fillerWordMatches = transcriptionText.match(/\b(um|uh|like|you know|ah|er|hmm)\b/gi) || [];
     const fillerWordCount = fillerWordMatches.length;
 
-    // --- Step 3: Structured Speech & Enunciation Analysis via OpenAI Chat Completions API ---
-    const systemPrompt = `You are VoiceLens, an expert speech enunciation, clarity, enunciation, and fluency analyst.
+    // --- Step 3: Free-Tier Structured Speech Analysis via Google Gemini API (gemini-1.5-flash) ---
+    const systemInstruction = `You are VoiceLens, an expert speech enunciation, clarity, enunciation, and fluency analyst.
 Your task is to analyze transcribed English speech and evaluate enunciation, clarity, fluency, pacing, confidence, and linguistic patterns according to objective speech rubrics.
 
 CRITICAL INSTRUCTION:
@@ -96,7 +97,9 @@ Speech Metadata:
 - Calculated Words Per Minute: ${wordsPerMinute} WPM
 - Detected Filler Words: ${fillerWordCount}`;
 
-    const userPrompt = `Return JSON with this exact schema:
+    const promptText = `${systemInstruction}
+
+Return JSON with this exact schema:
 {
   "overallScore": number (1-100),
   "pronunciationScore": { "score": number (1-100), "label": "Pronunciation", "description": string, "status": "good"|"needs_improvement" },
@@ -115,35 +118,46 @@ Speech Metadata:
   ]
 }`;
 
-    const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+
+    const geminiResponse = await fetch(geminiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
+        contents: [
+          {
+            parts: [{ text: promptText }],
+          },
         ],
-        response_format: { type: 'json_object' },
-        temperature: 0.3,
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.3,
+        },
       }),
     });
 
-    if (!chatResponse.ok) {
-      const errorText = await chatResponse.text();
-      console.error('Chat Completion API Error:', errorText);
+    if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text();
+      console.error('Gemini API Error:', errorText);
       return NextResponse.json(
-        { message: 'Speech analysis service encountered an error evaluating the transcript.' },
+        { message: 'Speech analysis service (Gemini) encountered an error evaluating the transcript.' },
         { status: 502 }
       );
     }
 
-    const chatData = await chatResponse.json();
-    const content = chatData.choices?.[0]?.message?.content;
-    const parsedAnalysis = JSON.parse(content);
+    const geminiData = await geminiResponse.json();
+    const responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!responseText) {
+      return NextResponse.json(
+        { message: 'Received empty response from speech analysis service.' },
+        { status: 502 }
+      );
+    }
+
+    const parsedAnalysis = JSON.parse(responseText);
 
     const fullResult: AnalysisResult = {
       id: `analysis_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
