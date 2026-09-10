@@ -1,19 +1,16 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Mic, Square, Trash2, AlertCircle } from 'lucide-react';
-import { AudioPlayer } from './AudioPlayer';
 
 interface AudioRecorderProps {
   onAudioRecorded: (blob: Blob, durationSeconds: number) => void;
-  onClear: () => void;
-  recordedAudioUrl: string | null;
+  onRecordingStart?: () => void;
+  isRecordingMode?: boolean;
 }
 
 export function AudioRecorder({
   onAudioRecorded,
-  onClear,
-  recordedAudioUrl,
+  onRecordingStart,
 }: AudioRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -22,6 +19,7 @@ export function AudioRecorder({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const durationRef = useRef<number>(0);
 
   useEffect(() => {
     return () => {
@@ -34,6 +32,7 @@ export function AudioRecorder({
   const startRecording = async () => {
     setPermissionError(null);
     audioChunksRef.current = [];
+    durationRef.current = 0;
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setPermissionError('Microphone access is not supported by your browser.');
@@ -68,18 +67,26 @@ export function AudioRecorder({
           return;
         }
 
-        onAudioRecorded(audioBlob, recordingTime);
+        const finalDuration = durationRef.current || 1;
+        onAudioRecorded(audioBlob, finalDuration);
 
-        // Stop microphone tracks
+        // Stop microphone tracks immediately
         stream.getTracks().forEach((track) => track.stop());
       };
 
       mediaRecorder.start(200);
       setIsRecording(true);
       setRecordingTime(0);
+      if (onRecordingStart) {
+        onRecordingStart();
+      }
 
       timerIntervalRef.current = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
+        setRecordingTime((prev) => {
+          const next = prev + 1;
+          durationRef.current = next;
+          return next;
+        });
       }, 1000);
     } catch (err: unknown) {
       console.error('Error accessing microphone:', err);
@@ -101,72 +108,120 @@ export function AudioRecorder({
     }
   };
 
-  const handleDiscard = () => {
-    setRecordingTime(0);
-    onClear();
-  };
-
   const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Generate 64 bars for the bell-curve waveform
+  const bars = Array.from({ length: 64 }, (_, i) => {
+    const distanceToCenter = Math.abs((i - 32) / 32);
+    const baseHeight = Math.max(10, Math.round(100 - distanceToCenter * 80));
+    const animDuration = (0.5 + (i % 5) * 0.25).toFixed(2);
+    const animDelay = (-((i * 0.1) % 2)).toFixed(2);
+
+    let colorClass = 'bg-surface-variant';
+    if (distanceToCenter < 0.2) {
+      colorClass = 'bg-primary';
+    } else if (distanceToCenter < 0.6) {
+      colorClass = 'bg-secondary';
+    }
+
+    return { id: i, baseHeight, animDuration, animDelay, colorClass };
+  });
+
   return (
-    <div className="flex flex-col items-center justify-center p-6 bg-slate-900/60 border border-slate-800 rounded-2xl w-full max-w-xl mx-auto shadow-inner">
+    <div className="z-10 flex flex-col items-center w-full max-w-3xl px-gutter mx-auto">
       {permissionError && (
-        <div className="w-full mb-4 p-3 bg-red-900/30 border border-red-700/50 rounded-xl flex items-center gap-3 text-red-200 text-sm">
-          <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-400" />
+        <div className="w-full mb-6 p-4 bg-error-container/20 border border-error/40 rounded-DEFAULT text-error text-body-md flex items-center justify-between">
           <span>{permissionError}</span>
+          <button
+            onClick={() => setPermissionError(null)}
+            className="text-xs uppercase tracking-widest hover:underline ml-4 cursor-pointer"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
-      {!recordedAudioUrl ? (
-        <div className="flex flex-col items-center gap-6 py-4">
-          {/* Recording pulse visualizer status */}
-          <div className="relative flex items-center justify-center">
-            {isRecording && (
-              <>
-                <div className="absolute w-28 h-28 bg-red-500/20 rounded-full animate-ping" />
-                <div className="absolute w-24 h-24 bg-red-500/30 rounded-full animate-pulse" />
-              </>
-            )}
+      {!isRecording ? (
+        <div className="flex flex-col items-center">
+          {/* Interactive Microphone Zone */}
+          <div
+            onClick={startRecording}
+            className="mb-12 relative flex items-center justify-center mic-container cursor-pointer group"
+          >
+            <div className="absolute w-40 h-40 rounded-full border border-surface-variant opacity-30 mic-ring transition-all duration-500" />
+            <div className="absolute w-48 h-48 rounded-full border border-surface-container-high opacity-10 transition-all duration-500 group-hover:scale-105" />
             <button
-              onClick={isRecording ? stopRecording : startRecording}
-              className={`relative z-10 p-6 rounded-full text-white shadow-lg transition-all duration-300 transform active:scale-95 ${
-                isRecording
-                  ? 'bg-red-600 hover:bg-red-500 ring-4 ring-red-500/40'
-                  : 'bg-indigo-600 hover:bg-indigo-500 ring-4 ring-indigo-500/20'
-              }`}
-              aria-label={isRecording ? 'Stop Recording' : 'Start Recording'}
+              aria-label="Start recording"
+              className="w-24 h-24 rounded-full bg-surface-container-low border border-outline-variant flex items-center justify-center relative z-10 transition-all duration-300 group-hover:border-primary group-hover:bg-surface-container focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
             >
-              {isRecording ? <Square className="w-8 h-8 fill-current" /> : <Mic className="w-8 h-8" />}
+              <span className="material-symbols-outlined text-[40px] text-primary transition-transform duration-300 group-hover:scale-110">
+                mic
+              </span>
             </button>
           </div>
 
-          <div className="text-center">
-            <p className="text-lg font-semibold text-white">
-              {isRecording ? 'Recording Speech...' : 'Click Microphone to Start Recording'}
-            </p>
-            <p className="text-sm font-mono text-slate-400 mt-1">
-              {isRecording ? formatTimer(recordingTime) : 'Speak clearly for 10–30 seconds for best results'}
-            </p>
-          </div>
+          <button
+            onClick={startRecording}
+            className="w-full max-w-xs bg-primary text-background font-headline-md text-headline-md py-3 px-6 rounded-DEFAULT hover:bg-surface-tint transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-primary font-semibold cursor-pointer"
+          >
+            Start recording
+          </button>
         </div>
       ) : (
-        <div className="w-full space-y-4">
-          <div className="flex items-center justify-between text-sm text-slate-300 px-1">
-            <span className="font-medium">Recorded Voice Preview</span>
-            <button
-              onClick={handleDiscard}
-              className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-400 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>Discard & Re-record</span>
-            </button>
+        <div className="flex flex-col items-center w-full">
+          {/* Metadata Top */}
+          <div className="flex flex-col items-center gap-2 mb-12">
+            <div className="flex items-center gap-3 border border-outline-variant/50 rounded-full px-4 py-1.5 bg-surface-container-low/50 backdrop-blur-sm">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
+              <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+                Recording in progress
+              </span>
+            </div>
           </div>
 
-          <AudioPlayer src={recordedAudioUrl} />
+          {/* Precision Timer */}
+          <div className="font-display-metrics text-display-metrics text-primary tabular-nums tracking-tighter mb-8">
+            {formatTimer(recordingTime)}
+            <span className="text-on-surface-variant text-[24px] ml-1">:45</span>
+          </div>
+
+          {/* Achromatic Waveform Visualizer */}
+          <div className="relative w-full max-w-lg h-32 flex items-end justify-center gap-[2px] mb-16 overflow-hidden border-b border-outline-variant/50 pb-2">
+            <div className="absolute bottom-2 left-0 w-full border-b border-outline-variant border-dashed opacity-30 z-0" />
+            {bars.map((bar) => (
+              <div
+                key={bar.id}
+                className={`w-[3px] rounded-t-[1px] wave-bar z-10 mix-blend-screen ${bar.colorClass}`}
+                style={{
+                  height: `${bar.baseHeight}%`,
+                  animationDuration: `${bar.animDuration}s`,
+                  animationDelay: `${bar.animDelay}s`,
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Stop Recording Action */}
+          <button
+            onClick={stopRecording}
+            className="group flex items-center justify-center gap-3 bg-primary text-background font-label-sm text-label-sm uppercase tracking-widest font-semibold px-8 py-4 rounded-DEFAULT hover:bg-secondary transition-all duration-300 active:scale-95 shadow-[0_0_0_1px_rgba(255,255,255,0.1)] cursor-pointer"
+          >
+            <span
+              className="material-symbols-outlined text-[18px] group-hover:scale-90 transition-transform"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              stop_circle
+            </span>
+            Stop recording
+          </button>
+
+          <div className="mt-6 font-mono text-mono-data text-outline-variant opacity-50">
+            Input: Internal Microphone (Linear PCM)
+          </div>
         </div>
       )}
     </div>

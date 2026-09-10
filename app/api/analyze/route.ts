@@ -11,21 +11,21 @@ export async function POST(request: Request) {
 
     if (!audioFile) {
       return NextResponse.json(
-        { message: 'No audio file provided. Please record or upload an audio file.' },
+        { message: 'No audio recording provided. Please record your speech.' },
         { status: 400 }
       );
     }
 
     if (audioFile.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { message: 'Audio file exceeds the maximum allowed size of 25MB.' },
+        { message: 'Audio recording exceeds maximum allowed duration.' },
         { status: 400 }
       );
     }
 
     if (audioFile.size === 0) {
       return NextResponse.json(
-        { message: 'Audio recording appears to be empty. Please record again.' },
+        { message: 'Audio recording appears to be empty. Please speak again.' },
         { status: 400 }
       );
     }
@@ -34,13 +34,12 @@ export async function POST(request: Request) {
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     // Generate realistic demonstration mock analysis results
-    // Explicitly labeled with `isMock: true` as requested by requirements
     const mockResult: AnalysisResult = {
       id: `analysis_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       timestamp: new Date().toISOString(),
       audioDurationSeconds: Math.min(Math.max(Math.round(audioFile.size / 16000), 5), 120),
       audioFileName: audioFile.name || 'recorded_speech.webm',
-      isMock: true, // Clearly separates demo/mock analysis from a future live ML engine backend
+      isMock: true,
 
       overallScore: 82,
       pronunciationScore: {
@@ -165,14 +164,14 @@ export async function POST(request: Request) {
       ],
 
       transcription:
-        'Thank you for using Accent Analyser. I am testing my speech clarity, pronunciation, and speaking pace in this audio recording session.',
+        'Thank you for using VoiceLens. I am testing my speech clarity, pronunciation, and speaking pace in this voice recording session.',
     };
 
     return NextResponse.json(mockResult, { status: 200 });
   } catch (error) {
     console.error('API Error in /api/analyze:', error);
     return NextResponse.json(
-      { message: 'An error occurred while processing the audio analysis request.' },
+      { message: 'An error occurred while processing the voice analysis request.' },
       { status: 500 }
     );
   }

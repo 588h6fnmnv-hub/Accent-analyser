@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Sparkles, ArrowLeft, RefreshCw, AlertCircle, Calendar, FileText } from 'lucide-react';
 import { AnalysisResult } from '@/types/analysis';
 import { ScoreCard } from '@/components/results/ScoreCard';
 import { AccentSummary } from '@/components/results/AccentSummary';
@@ -134,7 +133,7 @@ const DEMO_FALLBACK_ANALYSIS: AnalysisResult = {
     },
   ],
   transcription:
-    'Thank you for using Accent Analyser. I am testing my speech clarity, pronunciation, and speaking pace in this audio recording session.',
+    'Thank you for using VoiceLens. I am testing my speech clarity, pronunciation, and speaking pace in this voice recording session.',
 };
 
 export default function ResultsPage() {
@@ -146,7 +145,6 @@ export default function ResultsPage() {
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
-          // Set state inside effect asynchronously / on mount from storage
           const timer = setTimeout(() => {
             setResult(parsed);
           }, 0);
@@ -165,33 +163,33 @@ export default function ResultsPage() {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10 sm:py-16 space-y-8">
+    <div className="max-w-6xl mx-auto px-gutter py-10 sm:py-16 space-y-8 w-full">
       {/* Top Banner Notice for Mock Data */}
       {result.isMock && (
-        <div className="p-3.5 bg-amber-950/40 border border-amber-800/60 rounded-xl flex items-center justify-between gap-3 text-amber-200 text-xs">
+        <div className="p-4 bg-surface-container-low border border-outline-variant/40 rounded-DEFAULT flex items-center justify-between gap-3 text-on-surface-variant text-body-md">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <span className="material-symbols-outlined text-primary text-[20px]">
+              info
+            </span>
             <span>
               <strong>Demonstration Mode:</strong> Displaying realistic mock analysis results until live AI model backend is connected.
             </span>
           </div>
-          <span className="hidden sm:inline-block px-2 py-0.5 bg-amber-900/60 rounded text-[10px] font-mono uppercase">
+          <span className="font-mono text-mono-data uppercase border border-outline-variant px-2 py-0.5 rounded-DEFAULT">
             Demo Data
           </span>
         </div>
       )}
 
       {/* Header Actions & Meta */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-outline-variant/40 pb-6">
         <div>
-          <div className="flex items-center space-x-2 text-xs text-indigo-400 font-semibold uppercase tracking-wider mb-1">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Speech Analysis Report</span>
-          </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Your Accent & Voice Analysis</h1>
-          <div className="flex items-center space-x-4 text-xs text-slate-400 mt-2">
-            <span className="flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-slate-500" />
+          <span className="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">
+            Speech Analysis Report
+          </span>
+          <h1 className="font-display-metrics text-display-metrics text-primary mt-1">Analysis Results</h1>
+          <div className="flex flex-wrap items-center gap-4 font-mono text-mono-data text-on-surface-variant mt-3">
+            <span>
               {new Date(result.timestamp).toLocaleDateString(undefined, {
                 month: 'short',
                 day: 'numeric',
@@ -202,22 +200,15 @@ export default function ResultsPage() {
             </span>
             <span>•</span>
             <span>Duration: {result.audioDurationSeconds}s</span>
-            {result.audioFileName && (
-              <>
-                <span>•</span>
-                <span className="truncate max-w-[150px]">{result.audioFileName}</span>
-              </>
-            )}
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-3">
           <Link
             href="/analyse"
-            className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 text-sm font-semibold transition-colors shadow-sm"
+            className="bg-primary text-background font-label-sm text-label-sm uppercase tracking-widest px-6 py-3 rounded-DEFAULT hover:bg-surface-tint transition-colors font-semibold"
           >
-            <RefreshCw className="w-4 h-4" />
-            <span>Analyse Another Sample</span>
+            Analyze New Sample
           </Link>
         </div>
       </div>
@@ -229,14 +220,13 @@ export default function ResultsPage() {
         categoryScores={categoryScores}
       />
 
-      {/* Speech Transcription (if available) */}
+      {/* Speech Transcription */}
       {result.transcription && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-2">
-          <div className="flex items-center space-x-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            <FileText className="w-4 h-4 text-indigo-400" />
-            <span>Audio Sample Transcription</span>
-          </div>
-          <p className="text-sm text-slate-200 italic bg-slate-950 p-4 rounded-xl border border-slate-800/80 leading-relaxed">
+        <div className="bg-surface-container-low border border-outline-variant/40 rounded-DEFAULT p-6 space-y-3">
+          <span className="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant block">
+            Speech Transcription
+          </span>
+          <p className="font-body-lg text-body-lg text-primary italic bg-surface p-4 rounded-DEFAULT border border-outline-variant/30 leading-relaxed">
             &ldquo;{result.transcription}&rdquo;
           </p>
         </div>
@@ -256,12 +246,11 @@ export default function ResultsPage() {
       <ImprovementSuggestions suggestions={result.improvementSuggestions} />
 
       {/* Bottom CTA */}
-      <div className="pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-400 text-sm">
-        <Link href="/analyse" className="inline-flex items-center space-x-2 text-indigo-400 hover:text-indigo-300">
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Microphone / Upload</span>
+      <div className="pt-6 border-t border-outline-variant/40 flex flex-col sm:flex-row items-center justify-between gap-4 font-label-sm text-label-sm text-on-surface-variant">
+        <Link href="/analyse" className="hover:text-primary transition-colors uppercase tracking-widest">
+          ← Back to Voice Analyzer
         </Link>
-        <span className="text-xs text-slate-500">Accent Analyser • Ready for Vercel Deployment</span>
+        <span>VoiceLens Achromatic Precision</span>
       </div>
     </div>
   );

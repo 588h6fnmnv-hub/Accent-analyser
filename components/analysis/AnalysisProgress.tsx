@@ -1,76 +1,66 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Loader2, Mic, Cpu, Sparkles, CheckCircle2 } from 'lucide-react';
+import { useState } from 'react';
 
 interface AnalysisProgressProps {
   statusText?: string;
 }
 
-const STEPS = [
-  { label: 'Processing audio input...', icon: Mic },
-  { label: 'Transcribing speech & acoustic features...', icon: Cpu },
-  { label: 'Evaluating pronunciation & clarity metrics...', icon: Sparkles },
-  { label: 'Generating tailored accent report...', icon: CheckCircle2 },
-];
-
 export function AnalysisProgress({ statusText }: AnalysisProgressProps) {
-  const [activeStep, setActiveStep] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveStep((prev) => (prev < STEPS.length - 1 ? prev + 1 : prev));
-    }, 400);
-
-    return () => clearInterval(interval);
-  }, []);
+  const steps = [
+    { label: 'Recording', icon: 'check', isCompleted: true },
+    { label: 'Transcribing', icon: 'progress_activity', isActive: true },
+    { label: 'Analyzing pronunciation', icon: 'circle' },
+    { label: 'Analyzing speech', icon: 'circle' },
+    { label: 'Generating feedback', icon: 'circle' },
+  ];
 
   return (
-    <div className="flex flex-col items-center justify-center p-8 bg-slate-900/90 border border-slate-800 rounded-2xl w-full max-w-xl mx-auto shadow-2xl space-y-6">
-      <div className="p-4 bg-indigo-600/20 text-indigo-400 rounded-full animate-spin">
-        <Loader2 className="w-10 h-10" />
-      </div>
-
-      <div className="text-center space-y-2">
-        <h3 className="text-xl font-bold text-white">Analysing Your Voice</h3>
-        <p className="text-sm text-slate-400">
-          {statusText || 'Our speech engine is evaluating your audio sample.'}
+    <div className="w-full max-w-2xl px-gutter py-margin-page animate-fade-in flex flex-col mx-auto my-auto">
+      <header className="mb-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
+        <h1 className="font-display-metrics text-display-metrics text-primary mb-2 tracking-tighter">
+          Analyzing your voice
+        </h1>
+        <p className="font-body-lg text-body-lg text-on-surface-variant max-w-md">
+          {statusText || 'Running isolated acoustic models and transcribing phonemes. Please wait.'}
         </p>
-      </div>
+      </header>
 
-      <div className="w-full space-y-3 pt-2">
-        {STEPS.map((step, idx) => {
-          const Icon = step.icon;
-          const isDone = idx < activeStep;
-          const isCurrent = idx === activeStep;
-
-          return (
-            <div
-              key={idx}
-              className={`flex items-center space-x-3 p-3 rounded-xl border text-sm transition-all duration-300 ${
-                isDone
-                  ? 'border-indigo-900/50 bg-indigo-950/30 text-indigo-200'
-                  : isCurrent
-                  ? 'border-indigo-500 bg-slate-800 text-white shadow-md'
-                  : 'border-slate-800/60 bg-slate-950/20 text-slate-500'
+      <div className="flex flex-col gap-4 w-full max-w-md animate-slide-up" style={{ animationDelay: '200ms' }}>
+        {steps.map((item, index) => (
+          <div
+            key={index}
+            className={`flex items-center gap-3 transition-opacity duration-300 ${
+              item.isCompleted || item.isActive ? 'opacity-100' : 'opacity-50'
+            }`}
+          >
+            <div className="w-6 h-6 flex items-center justify-center shrink-0">
+              {item.isCompleted ? (
+                <span className="material-symbols-outlined text-primary font-bold text-[20px]">
+                  check
+                </span>
+              ) : item.isActive ? (
+                <span className="material-symbols-outlined text-primary animate-spin text-[20px]">
+                  progress_activity
+                </span>
+              ) : (
+                <span
+                  className="material-symbols-outlined text-[8px] text-on-surface-variant"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  circle
+                </span>
+              )}
+            </div>
+            <span
+              className={`font-headline-md text-headline-md text-primary ${
+                item.isActive ? 'animate-pulse' : ''
               }`}
             >
-              <div
-                className={`p-1.5 rounded-lg ${
-                  isDone
-                    ? 'bg-indigo-600/30 text-indigo-300'
-                    : isCurrent
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-slate-800 text-slate-600'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-              </div>
-              <span className="font-medium flex-1">{step.label}</span>
-              {isDone && <CheckCircle2 className="w-4 h-4 text-indigo-400" />}
-            </div>
-          );
-        })}
+              {item.label}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
