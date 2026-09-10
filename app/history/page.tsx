@@ -14,52 +14,10 @@ export interface HistoryItem {
 
 const STORAGE_KEY = 'voicelens_history_logs';
 
-const MOCK_DEFAULT_HISTORY: HistoryItem[] = [
-  {
-    id: 'h1',
-    timestamp: '2024.10.24-14:32:01',
-    referenceId: 'V-77A9-X1',
-    overallScore: 98.5,
-    accentProfile: 'RP_British_Standard',
-    duration: '01:42.5',
-  },
-  {
-    id: 'h2',
-    timestamp: '2024.10.24-11:15:44',
-    referenceId: 'V-77A9-X2',
-    overallScore: 84.2,
-    accentProfile: 'GenAm_Midwest',
-    duration: '03:15.0',
-  },
-  {
-    id: 'h3',
-    timestamp: '2024.10.23-18:45:12',
-    referenceId: 'V-77A8-Y1',
-    overallScore: 91.0,
-    accentProfile: 'Aus_Urban_East',
-    duration: '00:45.8',
-  },
-  {
-    id: 'h4',
-    timestamp: '2024.10.23-09:05:33',
-    referenceId: 'V-77A8-Z9',
-    overallScore: 76.4,
-    accentProfile: 'Scots_Lowland',
-    duration: '02:22.1',
-  },
-  {
-    id: 'h5',
-    timestamp: '2024.10.22-22:11:05',
-    referenceId: 'V-77A7-A1',
-    overallScore: 95.8,
-    accentProfile: 'RP_British_Standard',
-    duration: '05:10.0',
-  },
-];
-
 export default function HistoryPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [historyItems, setHistoryItems] = useState<HistoryItem[]>(MOCK_DEFAULT_HISTORY);
+  const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -85,15 +43,19 @@ export default function HistoryPage() {
             };
           });
 
-          // Schedule state update asynchronously to avoid React 19 cascading render lint rule
           const timer = setTimeout(() => {
-            setHistoryItems([...mappedItems, ...MOCK_DEFAULT_HISTORY]);
+            setHistoryItems(mappedItems);
+            setLoading(false);
           }, 0);
           return () => clearTimeout(timer);
         }
       }
+      const timer = setTimeout(() => setLoading(false), 0);
+      return () => clearTimeout(timer);
     } catch (err) {
       console.error('Error loading history from localStorage:', err);
+      const timer = setTimeout(() => setLoading(false), 0);
+      return () => clearTimeout(timer);
     }
   }, []);
 
@@ -104,9 +66,17 @@ export default function HistoryPage() {
       item.timestamp.includes(searchTerm)
   );
 
-  const avgClarity = (
-    historyItems.reduce((acc, curr) => acc + curr.overallScore, 0) / (historyItems.length || 1)
-  ).toFixed(1);
+  const avgClarity = historyItems.length > 0
+    ? (historyItems.reduce((acc, curr) => acc + curr.overallScore, 0) / historyItems.length).toFixed(1)
+    : '0.0';
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center font-mono text-mono-data text-on-surface-variant py-24">
+        Loading history logs...
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 w-full max-w-7xl mx-auto px-gutter py-margin-page">
@@ -175,69 +145,91 @@ export default function HistoryPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto w-full">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-outline-variant/40">
-                <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal whitespace-nowrap w-48">
-                  Date / Time
-                </th>
-                <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal">
-                  Reference ID
-                </th>
-                <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal text-right w-32">
-                  Overall Score
-                </th>
-                <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal w-48">
-                  Accent Profile
-                </th>
-                <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal text-right w-24">
-                  Duration
-                </th>
-                <th className="py-3 px-4 w-12" />
-              </tr>
-            </thead>
-            <tbody className="font-mono text-mono-data text-primary">
-              {filteredHistory.map((item) => (
-                <tr
-                  key={item.id}
-                  className="border-b border-outline-variant/20 hover:bg-surface-container-high transition-colors group cursor-pointer"
-                >
-                  <td className="py-3 px-4">{item.timestamp}</td>
-                  <td className="py-3 px-4 text-on-surface-variant">{item.referenceId}</td>
-                  <td className="py-3 px-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <span>{item.overallScore}</span>
-                      <div className="w-16 h-1 bg-surface-container rounded-full overflow-hidden flex">
-                        <div
-                          className="bg-primary h-full"
-                          style={{ width: `${item.overallScore}%` }}
-                        />
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">{item.accentProfile}</td>
-                  <td className="py-3 px-4 text-right">{item.duration}</td>
-                  <td className="py-3 px-4 text-center">
-                    <Link href="/results" className="text-on-surface-variant group-hover:text-primary transition-colors">
-                      <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="p-4 border-t border-outline-variant/40 flex justify-between items-center text-on-surface-variant font-label-sm text-label-sm">
-          <div>Showing 1-{filteredHistory.length} of {historyItems.length} entries</div>
-          <div className="flex gap-4">
-            <button className="hover:text-primary transition-colors disabled:opacity-50" disabled>
-              PREV
-            </button>
-            <button className="hover:text-primary transition-colors">NEXT</button>
+        {historyItems.length === 0 ? (
+          <div className="p-12 text-center space-y-4">
+            <span className="material-symbols-outlined text-[48px] text-on-surface-variant">
+              history
+            </span>
+            <h3 className="font-headline-lg text-headline-lg text-primary">No Analysis History Yet</h3>
+            <p className="font-body-md text-body-md text-on-surface-variant max-w-sm mx-auto">
+              Your voice analysis history is completely empty. Record your speech to create your first analysis log.
+            </p>
+            <div className="pt-2">
+              <Link
+                href="/analyse"
+                className="inline-block bg-primary text-background font-label-sm text-label-sm uppercase tracking-widest px-6 py-3 rounded-DEFAULT hover:bg-surface-tint transition-colors font-semibold"
+              >
+                Start Recording
+              </Link>
+            </div>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-outline-variant/40">
+                    <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal whitespace-nowrap w-48">
+                      Date / Time
+                    </th>
+                    <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal">
+                      Reference ID
+                    </th>
+                    <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal text-right w-32">
+                      Overall Score
+                    </th>
+                    <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal w-48">
+                      Accent Profile
+                    </th>
+                    <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal text-right w-24">
+                      Duration
+                    </th>
+                    <th className="py-3 px-4 w-12" />
+                  </tr>
+                </thead>
+                <tbody className="font-mono text-mono-data text-primary">
+                  {filteredHistory.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="border-b border-outline-variant/20 hover:bg-surface-container-high transition-colors group cursor-pointer"
+                    >
+                      <td className="py-3 px-4">{item.timestamp}</td>
+                      <td className="py-3 px-4 text-on-surface-variant">{item.referenceId}</td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <span>{item.overallScore}</span>
+                          <div className="w-16 h-1 bg-surface-container rounded-full overflow-hidden flex">
+                            <div
+                              className="bg-primary h-full"
+                              style={{ width: `${item.overallScore}%` }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">{item.accentProfile}</td>
+                      <td className="py-3 px-4 text-right">{item.duration}</td>
+                      <td className="py-3 px-4 text-center">
+                        <Link href="/results" className="text-on-surface-variant group-hover:text-primary transition-colors">
+                          <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="p-4 border-t border-outline-variant/40 flex justify-between items-center text-on-surface-variant font-label-sm text-label-sm">
+              <div>Showing 1-{filteredHistory.length} of {historyItems.length} entries</div>
+              <div className="flex gap-4">
+                <button className="hover:text-primary transition-colors disabled:opacity-50" disabled>
+                  PREV
+                </button>
+                <button className="hover:text-primary transition-colors">NEXT</button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
