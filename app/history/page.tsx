@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { AnalysisResult } from '@/types/analysis';
 
 export interface HistoryItem {
   id: string;
@@ -10,11 +12,13 @@ export interface HistoryItem {
   overallScore: number;
   accentProfile: string;
   duration: string;
+  rawResult?: AnalysisResult;
 }
 
 const STORAGE_KEY = 'voicelens_history_logs';
 
 export default function HistoryPage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +44,7 @@ export default function HistoryPage() {
               overallScore: item.overallScore || 80,
               accentProfile: profile.replace(/\s+/g, '_'),
               duration: `${mins.toString().padStart(2, '0')}:${secs}`,
+              rawResult: item,
             };
           });
 
@@ -58,6 +63,13 @@ export default function HistoryPage() {
       return () => clearTimeout(timer);
     }
   }, []);
+
+  const handleSelectHistoryItem = (item: HistoryItem) => {
+    if (item.rawResult && typeof window !== 'undefined') {
+      sessionStorage.setItem('latest_analysis_result', JSON.stringify(item.rawResult));
+    }
+    router.push('/results');
+  };
 
   const filteredHistory = historyItems.filter(
     (item) =>
@@ -191,6 +203,7 @@ export default function HistoryPage() {
                   {filteredHistory.map((item) => (
                     <tr
                       key={item.id}
+                      onClick={() => handleSelectHistoryItem(item)}
                       className="border-b border-outline-variant/20 hover:bg-surface-container-high transition-colors group cursor-pointer"
                     >
                       <td className="py-3 px-4">{item.timestamp}</td>
@@ -209,9 +222,9 @@ export default function HistoryPage() {
                       <td className="py-3 px-4">{item.accentProfile}</td>
                       <td className="py-3 px-4 text-right">{item.duration}</td>
                       <td className="py-3 px-4 text-center">
-                        <Link href="/results" className="text-on-surface-variant group-hover:text-primary transition-colors">
+                        <button className="text-on-surface-variant group-hover:text-primary transition-colors">
                           <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                        </Link>
+                        </button>
                       </td>
                     </tr>
                   ))}
