@@ -1,5 +1,4 @@
 import { AccentCharacteristic, SpeechPaceDetails, ConfidenceDeliveryDetails } from '@/types/analysis';
-import { Globe, Gauge, Activity } from 'lucide-react';
 
 interface AccentSummaryProps {
   characteristics: AccentCharacteristic[];
@@ -9,70 +8,69 @@ interface AccentSummaryProps {
 
 export function AccentSummary({ characteristics, speechPace, confidenceDelivery }: AccentSummaryProps) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-md">
-      <div className="flex items-center space-x-2 border-b border-slate-800 pb-4">
-        <div className="p-2 bg-indigo-600/20 text-indigo-400 rounded-lg">
-          <Globe className="w-5 h-5" />
-        </div>
-        <div>
-          <h3 className="text-xl font-bold text-white">Accent & Delivery Profile</h3>
-          <p className="text-xs text-slate-400">Speech pace, rhythm characteristics, and phonetic influences</p>
-        </div>
+    <div className="bg-surface-container-low border border-outline-variant/40 rounded-DEFAULT p-6 space-y-6">
+      <div className="border-b border-outline-variant/40 pb-4">
+        <span className="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">
+          Profile & Delivery
+        </span>
+        <h3 className="font-headline-lg text-headline-lg text-primary mt-1">Accent & Delivery Analysis</h3>
       </div>
 
       {/* Pace & Confidence Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80 space-y-2">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="flex items-center gap-1.5 font-semibold text-slate-300">
-              <Gauge className="w-4 h-4 text-indigo-400" /> Speech Pace
+        <div className="bg-surface p-4 rounded-DEFAULT border border-outline-variant/30 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
+              Speech Pace
             </span>
-            <span className="px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 font-mono border border-indigo-800/50">
+            <span className="font-mono text-mono-data text-primary px-2 py-0.5 bg-surface-container border border-outline-variant rounded-DEFAULT">
               {speechPace.category}
             </span>
           </div>
-          <div className="flex items-baseline space-x-2">
-            <span className="text-2xl font-bold text-white">{speechPace.wordsPerMinute}</span>
-            <span className="text-xs text-slate-400">Words per minute (WPM)</span>
+          <div className="flex items-baseline gap-2">
+            <span className="font-display-metrics text-[32px] text-primary">{speechPace.wordsPerMinute}</span>
+            <span className="font-mono text-mono-data text-on-surface-variant">WPM</span>
           </div>
-          <p className="text-xs text-slate-400">{speechPace.assessment}</p>
+          <p className="font-body-md text-body-md text-on-surface-variant">{speechPace.assessment}</p>
         </div>
 
-        <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80 space-y-2">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="flex items-center gap-1.5 font-semibold text-slate-300">
-              <Activity className="w-4 h-4 text-emerald-400" /> Confidence & Delivery
+        <div className="bg-surface p-4 rounded-DEFAULT border border-outline-variant/30 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
+              Confidence & Delivery
             </span>
-            <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 font-mono border border-emerald-800/50">
+            <span className="font-mono text-mono-data text-primary px-2 py-0.5 bg-surface-container border border-outline-variant rounded-DEFAULT">
               {confidenceDelivery.score}/100
             </span>
           </div>
-          <p className="text-xs text-slate-300 font-medium">{confidenceDelivery.pitchVariability}</p>
-          <p className="text-xs text-slate-400">{confidenceDelivery.pausesAssessment}</p>
+          <p className="font-headline-md text-headline-md text-primary">{confidenceDelivery.pitchVariability}</p>
+          <p className="font-body-md text-body-md text-on-surface-variant">{confidenceDelivery.pausesAssessment}</p>
         </div>
       </div>
 
       {/* Phonetic Accent Characteristics List */}
-      <div className="space-y-3 pt-2">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-          Detected Accent Traits
-        </h4>
+      {characteristics && characteristics.length > 0 && (
+        <div className="space-y-3 pt-2">
+          <span className="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant block">
+            Detected Accent Traits
+          </span>
 
-        <div className="space-y-3">
-          {characteristics.map((item, idx) => (
-            <div key={idx} className="bg-slate-950/70 p-4 rounded-xl border border-slate-800/70 space-y-1">
-              <div className="flex items-center justify-between">
-                <h5 className="text-sm font-semibold text-white">{item.trait}</h5>
-                <span className="text-xs font-mono text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/40">
-                  {item.confidence}% match
-                </span>
+          <div className="space-y-3">
+            {characteristics.map((item, idx) => (
+              <div key={idx} className="bg-surface p-4 rounded-DEFAULT border border-outline-variant/30 space-y-1">
+                <div className="flex items-center justify-between">
+                  <h5 className="font-headline-md text-headline-md text-primary">{item.trait}</h5>
+                  <span className="font-mono text-mono-data text-primary border border-outline-variant px-2 py-0.5 rounded-DEFAULT">
+                    {item.confidence}% match
+                  </span>
+                </div>
+                <p className="font-body-md text-body-md text-on-surface-variant font-medium">{item.influence}</p>
+                <p className="font-body-md text-body-md text-on-surface-variant pt-1 leading-relaxed">{item.description}</p>
               </div>
-              <p className="text-xs font-medium text-slate-400">{item.influence}</p>
-              <p className="text-xs text-slate-400 pt-1 leading-relaxed">{item.description}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB limit
-const DEFAULT_LOCAL_BACKEND = 'http://127.0.0.1:8000';
+const DEFAULT_BACKEND_URL = 'http://127.0.0.1:8000';
 
 export async function POST(request: Request) {
   try {
@@ -29,10 +29,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const backendBaseUrl = process.env.NEXT_PUBLIC_VOICELENS_API_URL || DEFAULT_LOCAL_BACKEND;
+    // Support configurable online VoiceLens FastAPI backend URL
+    const backendBaseUrl =
+      process.env.VOICELENS_API_URL ||
+      process.env.NEXT_PUBLIC_VOICELENS_API_URL ||
+      DEFAULT_BACKEND_URL;
+
     const backendEndpoint = `${backendBaseUrl.replace(/\/$/, '')}/api/analyze`;
 
-    // Forward the recorded audio file to local FastAPI VoiceLens backend
+    // Forward recorded audio file to the configured local or online VoiceLens FastAPI engine
     const backendFormData = new FormData();
     const filename = audioFile.name && audioFile.name.includes('.') ? audioFile.name : 'speech.webm';
     backendFormData.append('audio', audioFile, filename);
@@ -44,18 +49,18 @@ export async function POST(request: Request) {
         body: backendFormData,
       });
     } catch (connectionError) {
-      console.error('Local VoiceLens backend connection error:', connectionError);
+      console.error(`VoiceLens backend connection error (${backendEndpoint}):`, connectionError);
       return NextResponse.json(
-        { message: 'VoiceLens analysis engine is offline. Start the local VoiceLens backend and try again.' },
+        { message: 'VoiceLens analysis engine is offline or unreachable. Please verify the backend server status and try again.' },
         { status: 503 }
       );
     }
 
     if (!backendResponse.ok) {
       const errorText = await backendResponse.text().catch(() => '');
-      console.error(`Local backend error (${backendResponse.status}):`, errorText);
+      console.error(`VoiceLens backend error (${backendResponse.status}):`, errorText);
       return NextResponse.json(
-        { message: 'VoiceLens local analysis backend encountered an error processing your recording.' },
+        { message: 'VoiceLens analysis engine encountered an error processing your recording.' },
         { status: backendResponse.status >= 500 ? 502 : backendResponse.status }
       );
     }
