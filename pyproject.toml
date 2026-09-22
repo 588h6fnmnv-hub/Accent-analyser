@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "voicelens"
+version = "0.2.0"
+description = "VoiceLens: A production-ready open-source Python CLI for audio and voice analysis"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.109",
+    "uvicorn[standard]>=0.27",
+    "typer[all]>=0.9",
+    "rich>=13.7",
+    "textual>=0.52",
+    "faster-whisper>=1.0",
+    "av>=11.0",
+    "numpy>=1.24",
+    "torch>=2.1",
+    "torchaudio>=2.1",
+    "sounddevice>=0.4",
+    "python-multipart>=0.0.32",
+    "sqlite-utils>=3.37",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.1", "mypy>=1.8"]
+ml = ["speechbrain>=1.0"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["voicelens*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[project.scripts]
+voicelens = "voicelens.cli:app"
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true

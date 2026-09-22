@@ -1,0 +1,306 @@
+/* VoiceLens TUI - Monochrome Professional Theme */
+
+Screen {
+    background: $surface;
+    color: $text;
+}
+
+Header {
+    background: $surface;
+    color: $text;
+    border-bottom: solid $primary;
+    height: 1;
+}
+
+Footer {
+    background: $surface;
+    color: $text-muted;
+    border-top: solid $primary;
+    height: 1;
+}
+
+#main-container {
+    layout: vertical;
+    height: 1fr;
+    padding: 1;
+}
+
+#main-content {
+    height: 1fr;
+    content-align: center middle;
+}
+
+#recording-container {
+    layout: vertical;
+    height: 1fr;
+    padding: 1;
+}
+
+#recording-header {
+    text-style: bold;
+    padding: 0 0 1 0;
+}
+
+#recording-status {
+    height: 3;
+    content-align: center middle;
+}
+
+#recording-waveform {
+    color: $primary;
+    content-align: center middle;
+    padding: 1 0;
+    height: 3;
+}
+
+#recording-time {
+    text-style: bold;
+    content-align: center middle;
+    padding: 1 0;
+}
+
+#recording-info {
+    color: $text-muted;
+    content-align: center middle;
+}
+
+#recording-help {
+    color: $text-muted;
+    content-align: center middle;
+    padding: 1 0;
+    dock: bottom;
+}
+
+#analysis-container {
+    layout: vertical;
+    height: 1fr;
+    padding: 1;
+}
+
+#analysis-header {
+    text-style: bold;
+    padding: 0 0 1 0;
+}
+
+#analysis-status {
+    height: 3;
+    content-align: center middle;
+}
+
+#analysis-stages {
+    height: 1fr;
+    padding: 1 0;
+}
+
+#analysis-transcript-preview {
+    height: auto;
+    padding: 1 0;
+    border-top: solid $primary;
+}
+
+#analysis-help {
+    color: $text-muted;
+    content-align: center middle;
+    padding: 1 0;
+    dock: bottom;
+}
+
+#results-container {
+    layout: vertical;
+    height: 1fr;
+    padding: 1;
+}
+
+#results-header {
+    height: auto;
+    padding: 0 0 1 0;
+    border-bottom: solid $primary;
+}
+
+#results-content {
+    height: 1fr;
+    overflow-y: auto;
+}
+
+#results-help {
+    color: $text-muted;
+    content-align: center middle;
+    padding: 1 0;
+    dock: bottom;
+}
+
+#history-container {
+    layout: vertical;
+    height: 1fr;
+    padding: 1;
+}
+
+#history-header {
+    text-style: bold;
+    padding: 0 0 1 0;
+}
+
+#history-table {
+    height: 1fr;
+}
+
+#history-help {
+    color: $text-muted;
+    content-align: center middle;
+    padding: 1 0;
+    dock: bottom;
+}
+
+#settings-container {
+    layout: vertical;
+    height: 1fr;
+    padding: 1;
+}
+
+#settings-header {
+    text-style: bold;
+    padding: 0 0 1 0;
+}
+
+#settings-content {
+    height: 1fr;
+    overflow-y: auto;
+}
+
+#settings-help {
+    color: $text-muted;
+    content-align: center middle;
+    padding: 1 0;
+    dock: bottom;
+}
+
+#doctor-container {
+    layout: vertical;
+    height: 1fr;
+    padding: 1;
+}
+
+#doctor-header {
+    text-style: bold;
+    padding: 0 0 1 0;
+}
+
+#doctor-log {
+    height: 1fr;
+    border: solid $primary;
+}
+
+#doctor-help {
+    color: $text-muted;
+    content-align: center middle;
+    padding: 1 0;
+    dock: bottom;
+}
+
+#models-container {
+    layout: vertical;
+    height: 1fr;
+    padding: 1;
+}
+
+#models-header {
+    text-style: bold;
+    padding: 0 0 1 0;
+}
+
+#models-content {
+    height: 1fr;
+    overflow-y: auto;
+}
+
+#models-help {
+    color: $text-muted;
+    content-align: center middle;
+    padding: 1 0;
+    dock: bottom;
+}
+
+.button-primary {
+    background: $primary;
+    color: $text;
+    border: solid $primary;
+}
+
+.button-primary:hover {
+    background: $primary-lighten-1;
+}
+
+.input-field {
+    border: solid $primary;
+    background: $surface;
+    color: $text;
+}
+
+.input-field:focus {
+    border: solid $primary;
+}
+
+.data-table {
+    height: 1fr;
+}
+
+.data-table > .datatable--header {
+    background: $primary;
+    color: $text;
+}
+
+.data-table > .datatable--cursor {
+    background: $primary;
+    color: $text;
+}
+
+.data-table > .datatable--row-highlighted {
+    background: $primary-darken-1;
+}
+
+.tabs {
+    border-bottom: solid $primary;
+}
+
+.tab {
+    color: $text-muted;
+    padding: 0 2;
+    border: none;
+    background: $surface;
+}
+
+.tab:hover {
+    color: $text;
+}
+
+.tab--active {
+    color: $primary;
+    text-style: bold;
+    border-bottom: solid $primary;
+}
+
+.rich-log {
+    border: solid $primary;
+    height: 1fr;
+}
+
+.progress-bar {
+    margin: 1 0;
+    width: 1fr;
+}
+
+Static {
+    background: transparent;
+}
+
+Container {
+    background: transparent;
+}
+
+Vertical {
+    background: transparent;
+}
+
+Horizontal {
+    background: transparent;
+}
