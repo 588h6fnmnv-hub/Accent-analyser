@@ -3,6 +3,10 @@
  * Uses MediaRecorder API for browser microphone recording
  */
 
+'use client';
+
+import { useRef, useCallback } from 'react';
+
 export type RecordingState = 'idle' | 'recording' | 'paused' | 'stopped';
 
 export interface AudioRecorderOptions {
@@ -110,17 +114,17 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}) {
   const mimeType = options.mimeType || getSupportedMimeType();
   const audioBitsPerSecond = options.audioBitsPerSecond || 128000;
 
-  let mediaRecorder: MediaRecorder | null = null;
-  let chunks: Blob[] = [];
-  let stream: MediaStream | null = null;
-  let state: RecordingState = 'idle';
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const stateRef = useRef<RecordingState>('idle');
 
-  const isMediaRecorderSupported = (): boolean => {
+  const isMediaRecorderSupported = useCallback((): boolean => {
     return typeof MediaRecorder !== 'undefined' && typeof navigator !== 'undefined' && typeof navigator.mediaDevices !== 'undefined';
-  };
+  }, []);
 
-  const start = async (): Promise<void> => {
-    if (state === 'recording') return;
+  const start = useCallback(async (): Promise<void> => {
+    if (stateRef.current === 'recording') return;
 
     if (!isMediaRecorderSupported()) {
       const error = new AudioRecorderError(
@@ -150,7 +154,7 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}) {
     }
 
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
@@ -159,24 +163,27 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}) {
         },
       });
 
-      mediaRecorder = new MediaRecorder(stream, {
+      streamRef.current = stream;
+
+      const mediaRecorder = new MediaRecorder(stream, {
         mimeType,
         audioBitsPerSecond,
       });
 
-      chunks = [];
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event: BlobEvent) => {
         if (event.data.size > 0) {
-          chunks.push(event.data);
+          chunksRef.current.push(event.data);
           options.onDataAvailable?.(event.data);
         }
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: mimeType });
+        const blob = new Blob(chunksRef.current, { type: mimeType });
         options.onStop?.(blob);
-        state = 'stopped';
+        stateRef.current = 'stopped';
       };
 
       mediaRecorder.onerror = (event: Event & { error?: DOMException }) => {
@@ -184,13 +191,13 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}) {
           ? mapDOMExceptionToError(event.error)
           : new AudioRecorderError('UNKNOWN_ERROR', 'MediaRecorder error: unknown');
         options.onError?.(error);
-        state = 'idle';
+        stateRef.current = 'idle';
       };
 
       mediaRecorder.start(100);
-      state = 'recording';
+      stateRef.current = 'recording';
     } catch (error) {
-      state = 'idle';
+      stateRef.current = 'idle';
       if (error instanceof DOMException) {
         const mappedError = mapDOMExceptionToError(error);
         options.onError?.(mappedError);
@@ -208,11 +215,12 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}) {
       options.onError?.(unknownError);
       throw unknownError;
     }
-  };
+  }, [isMediaRecorderSupported, mimeType, audioBitsPerSecond, options]);
 
-  const stop = (): Promise<Blob> => {
+  const stop = useCallback((): Promise<Blob> => {
     return new Promise((resolve, reject) => {
-      if (!mediaRecorder || state !== 'recording') {
+      const mediaRecorder = mediaRecorderRef.current;
+      if (!mediaRecorder || stateRef.current !== 'recording') {
         const error = new AudioRecorderError('UNKNOWN_ERROR', 'Not recording');
         reject(error);
         return;
@@ -220,48 +228,51 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}) {
 
       const originalOnStop = mediaRecorder.onstop;
       mediaRecorder.onstop = (event: Event) => {
-        const blob = new Blob(chunks, { type: mimeType });
+        const blob = new Blob(chunksRef.current, { type: mimeType });
         if (originalOnStop) {
-          originalOnStop.call(mediaRecorder as MediaRecorder, event);
+          originalOnStop.call(mediaRecorder, event);
         }
         resolve(blob);
       };
 
       mediaRecorder.stop();
-      stream?.getTracks().forEach((track) => track.stop());
-      state = 'idle';
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+      stateRef.current = 'idle';
     });
-  };
+  }, [mimeType]);
 
-  const pause = (): void => {
-    if (mediaRecorder && state === 'recording') {
+  const pause = useCallback((): void => {
+    const mediaRecorder = mediaRecorderRef.current;
+    if (mediaRecorder && stateRef.current === 'recording') {
       mediaRecorder.pause();
-      state = 'paused';
+      stateRef.current = 'paused';
     }
-  };
+  }, []);
 
-  const resume = (): void => {
-    if (mediaRecorder && state === 'paused') {
+  const resume = useCallback((): void => {
+    const mediaRecorder = mediaRecorderRef.current;
+    if (mediaRecorder && stateRef.current === 'paused') {
       mediaRecorder.resume();
-      state = 'recording';
+      stateRef.current = 'recording';
     }
-  };
+  }, []);
 
-  const getState = (): RecordingState => state;
+  const getState = useCallback((): RecordingState => stateRef.current, []);
 
-  const isRecording = (): boolean => state === 'recording';
+  const isRecording = useCallback((): boolean => stateRef.current === 'recording', []);
 
-  const isSupported = (): boolean => isMediaRecorderSupported();
+  const isSupported = useCallback((): boolean => isMediaRecorderSupported(), [isMediaRecorderSupported]);
 
-  const cleanup = (): void => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      stream = null;
+  const cleanup = useCallback((): void => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
     }
-    mediaRecorder = null;
-    chunks = [];
-    state = 'idle';
-  };
+    mediaRecorderRef.current = null;
+    chunksRef.current = [];
+    stateRef.current = 'idle';
+  }, []);
 
   return {
     start,
