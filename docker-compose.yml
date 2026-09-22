@@ -1,0 +1,29 @@
+# VoiceLens Backend - Local Development with Docker Compose
+# Usage: docker-compose up --build
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - VOICELENS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - VOICELENS_WHISPER_MODEL=base.en
+      - VOICELENS_MAX_FILE_SIZE=50000000
+      - VOICELENS_LOG_LEVEL=INFO
+    volumes:
+      # Persist model cache across container restarts
+      - model_cache:/root/.cache/huggingface
+      - model_cache:/root/.cache/torch
+    # Health check for container orchestration
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  model_cache:

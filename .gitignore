@@ -65,3 +65,12 @@ build/
 
 # OS
 Thumbs.db
+
+# Local dev
+.opencode/
+whisper_cpp/bin/
+whisper_cpp/models/
+
+# Docker
+.docker/
+docker-compose.override.yml
