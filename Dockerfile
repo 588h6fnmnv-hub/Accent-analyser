@@ -62,8 +62,9 @@ except Exception as e:
     print(f'Accent classifier cache warning: {e}')
 "
 
-# Expose port
+# Expose port (Railway sets $PORT)
 EXPOSE 8000
 
 # Run with uvicorn (single worker for model sharing)
-CMD ["uvicorn", "voicelens.api.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+# Use $PORT from Railway environment
+CMD ["sh", "-c", "uvicorn voicelens.api.app:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"]
