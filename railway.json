@@ -10,5 +10,19 @@
     "healthcheckTimeout": 100,
     "restartPolicyType": "on_failure",
     "restartPolicyMaxRetries": 10
+  },
+  "services": {
+    "backend": {
+      "build": {
+        "builder": "dockerfile",
+        "dockerfilePath": "Dockerfile",
+        "rootDirectory": "."
+      },
+      "deploy": {
+        "startCommand": "uvicorn voicelens.api.app:app --host 0.0.0.0 --port $PORT --workers 1",
+        "healthcheckPath": "/api/health",
+        "healthcheckTimeout": 100
+      }
+    }
   }
 }
